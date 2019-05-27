@@ -6,7 +6,7 @@ const key = require('./privateSettings.json');
 
 // TODO(you): Change the value of this string to the spreadsheet id for your
 // GSA spreadsheet. See HW5 spec for more information.
-const SPREADSHEET_ID = '__YOUR__SPREADSHEET__ID__HERE__';
+const SPREADSHEET_ID = '1Ms0x8fiPuZMcbW52lqN0-IHmOjCdXqI4r0u112va3mU';
 
 const app = express();
 const jsonParser = bodyParser.json();
@@ -19,9 +19,34 @@ async function onGet(req, res) {
   const rows = result.rows;
   console.log(rows);
 
-  // TODO(you): Finish onGet.
+  let fieldName = rows[0];
+  let resJson = [];
 
-  res.json( { status: 'unimplemented'} );
+  console.log(fieldName);
+
+  for(let i=1;i<rows.length;i++)
+  {
+      // let tmp="{";
+
+      // for(let k=0;k<fieldName.length;k++)
+      // {
+      //   tmp+=  `\"${fieldName[k]}\":\"${rows[i][k]}\"`;
+      //   if(k!=(fieldName.length-1)) tmp+= ",";
+      // }
+
+      // tmp+="}";
+
+      let tmp={};
+
+      for(let k=0;k<fieldName.length;k++)
+      {
+        tmp[fieldName[k]]=rows[i][k];
+      }
+
+      console.log("test:"+tmp.email);
+      resJson.push(tmp);
+  }
+  res.json( resJson );
 }
 app.get('/api', onGet);
 
