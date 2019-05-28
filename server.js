@@ -43,21 +43,24 @@ async function onPost(req, res) {
   const messageBody = req.body;
   const result = await sheet.getRows();
   const rows = result.rows;
-  const fieldName = rows[0];
-  let newRow=[];
-  let parseNewRowFail=false;
+  let  fieldName = rows[0];
+  fieldName.forEach((Element,index,array)=>{
+    array[index]=Element.toUpperCase();
+  })
 
-  for(let i in fieldName)
+  let newRow=[];
+  let keys = Object.keys(messageBody);
+  let values = Object.values(messageBody);
+
+  for(let i=0;i<keys.length;i++)
   {
-    if(messageBody.hasOwnProperty(fieldName[i]))
-    {
-      newRow.push(messageBody[fieldName[i]]);
-    }
+    let index = fieldName.indexOf(keys[i].toUpperCase());
+    newRow[index] = values[i];
   }
 
   console.log('NewRow: '+ newRow);
 
-  res.json( await sheet.setRow(rows.length, newRow));
+  res.json( await sheet.appendRow(newRow));
 }
 app.post('/api', jsonParser, onPost);
 
@@ -66,11 +69,46 @@ async function onPatch(req, res) {
   const value  = req.params.value;
   const messageBody = req.body;
 
+  const result = await sheet.getRows();
+  const rows = result.rows;
+  let fieldName = rows[0];
+
+  let updateIndex = -1;
+  let selectedColumn = -1;
+
+  
+  for(let i=0;i<rows[0].length;i++)
+  {
+    if(rows[0][i].toUpperCase()===column.toUpperCase())
+    {
+      selectedColumn=i;
+      break;
+    }
+  }
+
+  for(let i=1;i<rows.length;i++)
+  {
+    if(rows[i][selectedColumn]===value)
+    {
+      updateIndex=i;
+      break;
+    }
+  }
 
 
-  // TODO(you): Implement onPatch.
+  let newRow = rows[updateIndex];
 
-  res.json( { status: 'unimplemented'} );
+  for(let i=0;i<fieldName.length;i++)
+  {
+    if(messageBody.hasOwnProperty(fieldName[i]))
+    {
+      newRow[i] = messageBody[fieldName[i]];
+    }
+  }
+
+  console.log(newRow);
+
+  res.json(await sheet.setRow(updateIndex, newRow));
 }
 app.patch('/api/:column/:value', jsonParser, onPatch);
 
@@ -85,7 +123,7 @@ async function onDelete(req, res) {
   
   for(let i=0;i<rows[0].length;i++)
   {
-    if(rows[0][i]===column)
+    if(rows[0][i].toUpperCase()===column.toUpperCase())
     {
       selectedColumn=i;
       break;
@@ -101,15 +139,7 @@ async function onDelete(req, res) {
     }
   }
 
-
-  console.log(`column:${column}, value: ${value}`);
-  console.log(`selected-Column: ${selectedColumn}`);
-  console.log(`deleteIndex: ${deleteIndex}`);
-
-  let response = await sheet.deleteRow(deleteIndex);
-  console.log(`Response: ${response['response']}`);
-
-  res.json(response);
+  res.json(await sheet.deleteRow(deleteIndex));
 }
 app.delete('/api/:column/:value',  onDelete);
 
