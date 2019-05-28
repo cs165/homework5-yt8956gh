@@ -26,16 +26,6 @@ async function onGet(req, res) {
 
   for(let i=1;i<rows.length;i++)
   {
-      // let tmp="{";
-
-      // for(let k=0;k<fieldName.length;k++)
-      // {
-      //   tmp+=  `\"${fieldName[k]}\":\"${rows[i][k]}\"`;
-      //   if(k!=(fieldName.length-1)) tmp+= ",";
-      // }
-
-      // tmp+="}";
-
       let tmp={};
 
       for(let k=0;k<fieldName.length;k++)
@@ -43,19 +33,31 @@ async function onGet(req, res) {
         tmp[fieldName[k]]=rows[i][k];
       }
 
-      console.log("test:"+tmp.email);
       resJson.push(tmp);
   }
-  res.json( resJson );
+  res.json(resJson);
 }
 app.get('/api', onGet);
 
 async function onPost(req, res) {
   const messageBody = req.body;
+  const result = await sheet.getRows();
+  const rows = result.rows;
+  const fieldName = rows[0];
+  let newRow=[];
+  let parseNewRowFail=false;
 
-  // TODO(you): Implement onPost.
+  for(let i in fieldName)
+  {
+    if(messageBody.hasOwnProperty(fieldName[i]))
+    {
+      newRow.push(messageBody[fieldName[i]]);
+    }
+  }
 
-  res.json( { status: 'unimplemented'} );
+  console.log('NewRow: '+ newRow);
+
+  res.json( await sheet.setRow(rows.length, newRow));
 }
 app.post('/api', jsonParser, onPost);
 
@@ -63,6 +65,8 @@ async function onPatch(req, res) {
   const column  = req.params.column;
   const value  = req.params.value;
   const messageBody = req.body;
+
+
 
   // TODO(you): Implement onPatch.
 
@@ -73,10 +77,39 @@ app.patch('/api/:column/:value', jsonParser, onPatch);
 async function onDelete(req, res) {
   const column  = req.params.column;
   const value  = req.params.value;
+  const result = await sheet.getRows();
+  const rows = result.rows;
+  let deleteIndex = -1;
+  let selectedColumn = -1;
 
-  // TODO(you): Implement onDelete.
+  
+  for(let i=0;i<rows[0].length;i++)
+  {
+    if(rows[0][i]===column)
+    {
+      selectedColumn=i;
+      break;
+    }
+  }
 
-  res.json( { status: 'unimplemented'} );
+  for(let i=1;i<rows.length;i++)
+  {
+    if(rows[i][selectedColumn]===value)
+    {
+      deleteIndex=i;
+      break;
+    }
+  }
+
+
+  console.log(`column:${column}, value: ${value}`);
+  console.log(`selected-Column: ${selectedColumn}`);
+  console.log(`deleteIndex: ${deleteIndex}`);
+
+  let response = await sheet.deleteRow(deleteIndex);
+  console.log(`Response: ${response['response']}`);
+
+  res.json(response);
 }
 app.delete('/api/:column/:value',  onDelete);
 
